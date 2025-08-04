@@ -607,12 +607,16 @@ if uploaded_file:
                             st.markdown("⚠️ You have spent more than your deposits!")
 
                         # Calculate no-spend days
-                        all_days = pd.date_range(df_viz['date'].min(), df_viz['date'].max())
+                        df_viz['date'] = pd.to_datetime(df_viz['date'])
+                        floor = df_viz.iloc[:-1]['date'].min()
+                        ceilling = df_viz['date'].max()
+                        all_days = pd.date_range(floor, ceilling)
                         withdrawal_days = pd.to_datetime(df_viz[df_viz['withdrawal'] > 0]['date'].unique())
-                        no_spend_days = len(set(all_days.date) - set(withdrawal_days.date))
+                        no_spend_days = len(set(d.date() for d in all_days) - set(d.date() for d in withdrawal_days))
 
+                        
                         # Display no-spend days
-                        st.markdown("### 📆 No-Spend Days")
+                        st.markdown(f"### 📆 No-Spend Days from **{floor.date()}** to **{ceilling.date()}**")
                         st.markdown(f"**{no_spend_days}** days with no withdrawals")
 
 
