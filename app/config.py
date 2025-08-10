@@ -12,7 +12,7 @@ DATA_DIR = os.path.join(BASE_DIR, 'data')
 TRAIN_CSV_PATH = os.path.join(DATA_DIR, 'transactions.csv')
 
 # Model artifact paths
-MODEL_PATH = os.path.join(MODEL_DIR, 'xgb_model.joblib')               # ✅ this replaces overwritten MODEL_DIR
+MODEL_PATH = os.path.join(MODEL_DIR, 'xgb_model.joblib')
 ENCODER_PATH = os.path.join(MODEL_DIR, 'onehot.joblib')
 LABEL_ENCODER_PATH = os.path.join(MODEL_DIR, 'label_encoder.joblib')
 
