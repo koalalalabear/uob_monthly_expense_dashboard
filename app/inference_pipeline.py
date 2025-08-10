@@ -20,7 +20,8 @@ def run_inference(df: pd.DataFrame) -> pd.DataFrame:
     X = pipeline.transform(df)
 
     # Step 3: Load trained model
-    model = joblib.load(os.path.join(MODEL_DIR, "xgb_model.joblib"))
+    from app.config import MODEL_PATH
+    model = joblib.load(MODEL_PATH)
 
     # Step 4: Predict
     y_pred_indices = model.predict(X)
