@@ -26,25 +26,6 @@ categorical_cols = ['transaction_type']
 # === Define Transformers ===
 from sklearn.base import BaseEstimator, TransformerMixin
 
-# class RareClassGroupingTransformer(BaseEstimator, TransformerMixin):
-#     def __init__(self, threshold=0.01, target_col='category', new_col='category_grouped'):
-#         self.threshold = threshold
-#         self.target_col = target_col
-#         self.new_col = new_col
-#         self.rare_classes_ = None
-
-#     def fit(self, X, y=None):
-#         freq = X[self.target_col].value_counts(normalize=True)
-#         self.rare_classes_ = freq[freq < self.threshold].index.tolist()
-#         return self
-
-#     def transform(self, X):
-#         X = X.copy()
-#         X[self.new_col] = X[self.target_col].apply(lambda x: x if x not in self.rare_classes_ else 'unknown')
-#         return X
-
-
-
 class CleanDescriptionTransformer(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None): return self
     def transform(self, X):
@@ -139,37 +120,50 @@ class FeaturePreparationTransformer(BaseEstimator, TransformerMixin):
         X_emb = df[emb_cols].values if emb_cols else np.empty((df.shape[0], 0))
         return np.hstack([X_numeric, X_cat, X_emb])
 
-# === Load data ===
-# df = pd.read_csv('/Users/yvellenah/citicredit-dashboard/notebooks/.ipynb_checkpoints/transactions.csv')
+def create_pipeline():
+    """Create and return the training pipeline."""
+    return Pipeline([
+        ('rare_class_grouping', RareClassGroupingTransformer()),
+        ('clean_desc', CleanDescriptionTransformer()),
+        ('extract_merchant', ExtractMerchantTransformer()),
+        ('clean_txn_type', CleanTransactionTypeTransformer()),
+        ('date_features', DateFeatureTransformer()),
+        ('txn_type_counts', TransactionTypeCountTransformer()),
+        ('merchant_type_counts', MerchantTypeCountTransformer()),
+        ('merchant_tfidf', MerchantTFIDFTransformer()),
+        ('merchant_embedding', MerchantEmbeddingTransformer()),
+        ('feature_prep', FeaturePreparationTransformer(numeric_cols, categorical_cols)),
+    ])
 
-# === Create pipeline ===
-pipeline = Pipeline([
-    ('rare_class_grouping', RareClassGroupingTransformer()),
-    ('clean_desc', CleanDescriptionTransformer()),
-    ('extract_merchant', ExtractMerchantTransformer()),
-    ('clean_txn_type', CleanTransactionTypeTransformer()),
-    ('date_features', DateFeatureTransformer()),
-    ('txn_type_counts', TransactionTypeCountTransformer()),
-    ('merchant_type_counts', MerchantTypeCountTransformer()),
-    ('merchant_tfidf', MerchantTFIDFTransformer()),
-    ('merchant_embedding', MerchantEmbeddingTransformer()),
-    ('feature_prep', FeaturePreparationTransformer(numeric_cols, categorical_cols)),
-])
+def train_model(data_path):
+    """Train the model with the given data path."""
+    # === Load data ===
+    df = pd.read_csv(data_path)
 
-# === Preprocess features ===
-X = pipeline.fit_transform(df)
+    # === Create pipeline ===
+    pipeline = create_pipeline()
 
-# === Encode target ===
-le = LabelEncoder()
-df = pipeline.named_steps['rare_class_grouping'].transform(df)
-y = le.fit_transform(df['category_grouped'])
+    # === Preprocess features ===
+    X = pipeline.fit_transform(df)
 
-# === Train model ===
-model = XGBClassifier(n_jobs=-1, eval_metric='mlogloss')
-model.fit(X, y)
+    # === Encode target ===
+    le = LabelEncoder()
+    df = pipeline.named_steps['rare_class_grouping'].transform(df)
+    y = le.fit_transform(df['category_grouped'])
 
-# === Save artifacts ===
-joblib.dump(model, MODEL_PATH)
-joblib.dump(le, LABEL_ENCODER_PATH)
-joblib.dump(pipeline.named_steps['feature_prep'].encoder, ENCODER_PATH)
-joblib.dump(pipeline, os.path.join(MODEL_DIR, 'training_pipeline.joblib'))
+    # === Train model ===
+    model = XGBClassifier(n_jobs=-1, eval_metric='mlogloss')
+    model.fit(X, y)
+
+    # === Save artifacts ===
+    joblib.dump(model, MODEL_PATH)
+    joblib.dump(le, LABEL_ENCODER_PATH)
+    joblib.dump(pipeline.named_steps['feature_prep'].encoder, ENCODER_PATH)
+    joblib.dump(pipeline, os.path.join(MODEL_DIR, 'training_pipeline.joblib'))
+    
+    print("Model training completed and artifacts saved!")
+    return model, pipeline, le
+
+if __name__ == "__main__":
+    data_path = '/Users/yvellenah/citicredit-dashboard/notebooks/.ipynb_checkpoints/transactions.csv'
+    train_model(data_path)
