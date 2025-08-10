@@ -1,37 +1,32 @@
 import sys
 import os
-
 from app.training_pipeline import RareClassGroupingTransformer
-from app.config import TRAINING_PIPELINE_PATH, MODEL_DIR, LABEL_ENCODER_PATH
-from app.utils import prepare_features, prepare_numeric_features, prepare_categorical_features
-
+from app.config import TRAINING_PIPELINE_PATH, MODEL_DIR, LABEL_ENCODER_PATH, MODEL_PATH
 import joblib
 import pandas as pd
 import numpy as np
 
 
-
 def run_inference(df: pd.DataFrame) -> pd.DataFrame:
-    # Step 1: Load pipeline & label encoder
+    #Load pipeline & label encoder
     pipeline = joblib.load(TRAINING_PIPELINE_PATH)
     le = joblib.load(LABEL_ENCODER_PATH)
 
-    # Step 2: Transform features using pipeline (no fitting)
+    #Transform features using pipeline (no fitting)
     X = pipeline.transform(df)
 
-    # Step 3: Load trained model
-    from app.config import MODEL_PATH
+    # Load trained model
     model = joblib.load(MODEL_PATH)
 
-    # Step 4: Predict
+    #Predict
     y_pred_indices = model.predict(X)
     y_pred_proba = model.predict_proba(X)
 
-    # Step 5: Convert predictions to labels and confidence
+    #Convert predictions to labels and confidence
     y_pred_labels = le.inverse_transform(y_pred_indices)
     y_pred_conf = np.max(y_pred_proba, axis=1)
 
-    # Step 6: Return results
+    #Return results
     result_df = df.copy()
     result_df['Predicted Category'] = y_pred_labels
     result_df['Confidence Score'] = y_pred_conf
