@@ -140,7 +140,7 @@ class FeaturePreparationTransformer(BaseEstimator, TransformerMixin):
         return np.hstack([X_numeric, X_cat, X_emb])
 
 # === Load data ===
-df = pd.read_csv('/Users/yvellenah/citicredit-dashboard/notebooks/.ipynb_checkpoints/transactions.csv')
+# df = pd.read_csv('/Users/yvellenah/citicredit-dashboard/notebooks/.ipynb_checkpoints/transactions.csv')
 
 # === Create pipeline ===
 pipeline = Pipeline([
